@@ -1,7 +1,7 @@
 gutenberg
 =========
 gutenberg is a parser for gutenberg's library (http://www.gutenberg.org/)
-all content will be publish to lbry network.
+all content will be published to lbry network.
 
 Installation
 ------------
