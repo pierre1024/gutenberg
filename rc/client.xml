@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<client>
+	<first>10000</first>
+	<last>52000</last>
+	<cacheFolder>cache</cacheFolder>
+	<bid>0.0000001</bid>
+	<processTimeout>200</processTimeout><!--(seconds)-->
+	<interProcessDelay>5</interProcessDelay><!--(seconds)-->
+	
+	<!-- db configuration-->
+	<db>
+		<port>your port</port>
+		<addr>your ip</addr>
+		<name>your db</name>
+		<user>your username</user>
+		<password>your password</password>
+		<driver>org.postgresql.Driver</driver>
+		<jdbcName>postgresql</jdbcName>
+	</db>
+	
+	<!-- log configuration-->
+	<log>
+		<name>gutemberg</name>
+		<filename>gutemberg.log</filename>
+		<maxFileNumber>1</maxFileNumber>
+		<maxFileSize>1000000</maxFileSize>
+	</log>
+</client>

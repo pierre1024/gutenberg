@@ -1,0 +1,17 @@
+<ivy-module version="2.0">
+    <info organisation="org.apache" module="gutenberg"/>
+    <configurations>
+    	<conf name="build"/>
+	</configurations>
+	
+	
+    <dependencies>
+        <dependency org="commons-io" name="commons-io" rev="2.5" conf="build->default"/>
+		<dependency org="net.sf.jtidy" name="jtidy" rev="r938" conf="build->default"/>
+		<dependency org="org.postgresql" name="postgresql" rev="9.4.1212.jre7" conf="build->default"/>
+		<dependency org="org.json" name="json" rev="20160810" conf="build->default"/>
+		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.5.2" conf="build->default"/>
+		<dependency org="org.apache.httpcomponents" name="httpcore" rev="4.4.5" conf="build->default"/>
+    </dependencies>
+    
+</ivy-module>

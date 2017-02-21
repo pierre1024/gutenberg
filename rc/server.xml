@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<server>
+
+  <catalogFilename>rc/catalog.tar.zip</catalogFilename>
+  <catalogURL>http://www.gutenberg.org/cache/epub/feeds/rdf-files.tar.zip</catalogURL>
+  <rssFilename>rc/tmp.rss</rssFilename>
+  <rssURL>http://www.gutenberg.org/cache/epub/feeds/today.rss</rssURL>
+  
+  
+  
+  <!-- db configuration-->
+  <db>
+	<port>your port</port>
+	<addr>your ip</addr>
+	<name>your db</name>
+	<user>your username</user>
+	<password>your password</password>
+	<driver>org.postgresql.Driver</driver>
+	<jdbcName>postgresql</jdbcName>
+  </db>
+</server>
