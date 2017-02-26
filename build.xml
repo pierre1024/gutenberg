@@ -2,6 +2,13 @@
  <project xmlns:ivy="antlib:org.apache.ivy.ant" default="build" name="gutenberg">
 
  	<ivy:settings file="ivysettings.xml"/>
+
+
+	<target	name="bootstrap" unless="ivy.jar.found" depends="ivy-jar-check" description="Install ivy">
+		<mkdir dir="${user.home}/.ant/lib"/>
+		<get dest="${user.home}/.ant/lib/ivy.jar" src="http://search.maven.org/remotecontent?filepath=org/apache/ivy/ivy/2.4.0/ivy-2.4.0.jar"/>
+	</target>
+			
  	<target name="init" description="--> retrieve dependencies with ivy">
  	    <mkdir dir="ivy_cache"/>
 		<ivy:resolve />
@@ -9,7 +16,12 @@
 		<ivy:retrieve />
  	</target>
  	
-   <target name="build" depends="init">
+ 	
+	<target name="ivy-jar-check">
+	   <available file="${user.home}/.ant/lib/ivy.jar"  property="ivy.jar.found"/>
+	</target>
+
+   <target name="build" depends="init,bootstrap">
     <mkdir dir="build/classes"/>
     <javac includeantruntime="false"  srcdir="src" destdir="build/classes" classpathref="build.classpath"/>
    </target>
