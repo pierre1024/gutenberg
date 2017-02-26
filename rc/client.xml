@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <client>
-	<first>10000</first>
-	<last>52000</last>
-	<cacheFolder>cache</cacheFolder>
+    
+	<cacheFolder></cacheFolder>
 	<bid>0.0000001</bid>
 	<processTimeout>200</processTimeout><!--(seconds)-->
-	<interProcessDelay>5</interProcessDelay><!--(seconds)-->
+	<interProcessDelay>0</interProcessDelay><!--(seconds)-->
 	
 	<!-- db configuration-->
 	<db>
-		<port>your port</port>
-		<addr>your ip</addr>
-		<name>your db</name>
-		<user>your username</user>
-		<password>your password</password>
+		<port>27017</port>
+		<addr>54.88.159.240</addr>
+		<name>heracles</name>
+		<user>worker</user>
+		<password>lbry</password>
 		<driver>org.postgresql.Driver</driver>
 		<jdbcName>postgresql</jdbcName>
 	</db>

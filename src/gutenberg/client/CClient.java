@@ -6,6 +6,7 @@ import gutenberg.CActor;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.sql.ResultSet;
@@ -32,7 +33,7 @@ import org.json.JSONObject;
 public class CClient extends CActor
 {
 	private CConfig config;
-	private static final String CLIENT_CONFIG_FILENAME="rc/client.xml";
+	private static final String CLIENT_CONFIG_FILENAME="client.xml";
 	public CClient()
 	{
 		this(CLIENT_CONFIG_FILENAME);
@@ -47,8 +48,20 @@ public class CClient extends CActor
 	 */
 	public void init() throws Exception
 	{
-		config=CConfig.build(configFilename);
-		super.init();
+		InputStream configStream = getClass().getClassLoader().getResourceAsStream(configFilename); 
+		if(configStream==null)
+		{
+			throw new Exception("CClient::init> invalid configuration, unable to find config filename {"+configFilename+"}");
+		}
+		try
+		{
+			config=CConfig.build(configStream);
+			super.init();	
+		}
+		finally
+		{
+			configStream.close();
+		}
 	}
 
 	/**
@@ -78,14 +91,7 @@ public class CClient extends CActor
 		String sErr="";
 		while ((line = err.readLine()) != null)
 		{
-			sErr+=line;
-		}
-		//we have an error abort
-		if(!sErr.isEmpty())
-		{
-			String msg="publish request report error {"+sErr+"}";
-			getLogger().log(Level.SEVERE,msg);
-			throw new Exception(msg);
+			sErr+=line+"\n";
 		}
 	
 		BufferedReader answer = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -94,11 +100,12 @@ public class CClient extends CActor
 		String sAnswer="";
 		while ((line = answer.readLine()) != null)
 		{
-			sAnswer+=line;
+			sAnswer+=line+"\n";
 		}
+		//we have an error abort
 		if(sAnswer.isEmpty())
 		{
-			String msg="publish answer is empty";
+			String msg="publish answer is empty error {"+sErr+"}";
 			getLogger().log(Level.SEVERE,msg);
 			throw new Exception(msg);
 		}
@@ -206,10 +213,15 @@ public class CClient extends CActor
 		/************************************************
 		 * Download ebook file to cache folder
 		 ************************************************/
-		String cacheFilename=config.getCacheFolder()+File.separator+name+".epub";
+		String cacheFolder=config.getCacheFolder();
+		if(cacheFolder.isEmpty())
+		{
+			cacheFolder=System.getProperty("user.dir")+File.separator+"cache";
+		}
+		String cacheFilename=cacheFolder+File.separator+name+".epub";
 
 		getLogger().log(Level.INFO,"downloading file {"+path+"} to {"+cacheFilename+"} ...");
-
+		
 		try
 		{
 			FileUtils.copyURLToFile(new URL(jsonParam.getString("file_path")), new File(cacheFilename));
@@ -223,6 +235,7 @@ public class CClient extends CActor
 		getLogger().log(Level.INFO,"download done!");
 		
 		jsonParam.put("file_path",cacheFilename);
+		publishWP(jsonRequest);
 	}
 	
 	/**
@@ -247,7 +260,7 @@ public class CClient extends CActor
 		{
 
 			Statement statement = connection.createStatement();
-			String sql = "SELECT ID, METADATA FROM WORK_PACKAGE WHERE STATUS = 'AVAILABLE';";
+			String sql = "SELECT ID, METADATA FROM WORK_PACKAGE WHERE STATUS = 'AVAILABLE' LIMIT 10000;";
 			sqlResult = statement.executeQuery(sql);
 		}
 		catch(SQLException exception)
@@ -264,6 +277,8 @@ public class CClient extends CActor
 		 ************************************************/
 		getLogger().log(Level.INFO,"processing all work packages {"+sqlResult.getFetchSize()+"}!");
 		
+		
+	
 		while (sqlResult.next())
 		{
 			int wpId=sqlResult.getInt("ID");
@@ -274,6 +289,7 @@ public class CClient extends CActor
 			catch(Exception exception)
 			{
 				commitWPStatus(wpId,false);
+				continue;
 			}
 			commitWPStatus(wpId,true);
 		}

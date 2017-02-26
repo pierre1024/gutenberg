@@ -25,6 +25,7 @@ public class CMain
 		//something goes wrong we abort program
 		catch (Exception exception)
 		{
+			System.out.println("client.CMain> unexpected exception {"+exception.getMessage()+"}");
 			System.exit(-1);
 		}
 	}

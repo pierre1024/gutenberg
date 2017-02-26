@@ -2,7 +2,7 @@ package gutenberg.server;
 
 import gutenberg.AConfig;
 
-import java.io.File;
+import java.io.InputStream;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -60,14 +60,13 @@ public class CConfig extends AConfig
 	}
 	
 	// Build config class from xml
-	public static CConfig build(String xml)
+	public static CConfig build(InputStream configStream)
 	{
-		File configFile = new File(xml);
 		try
 		{
 			JAXBContext jaxbContext = JAXBContext.newInstance(CConfig.class);
 			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-			return (CConfig)jaxbUnmarshaller.unmarshal(configFile);
+			return (CConfig)jaxbUnmarshaller.unmarshal(configStream);
 
 		} catch (JAXBException e)
 		{

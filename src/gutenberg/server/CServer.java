@@ -2,12 +2,14 @@ package gutenberg.server;
 
 import gutenberg.AConfig;
 import gutenberg.CActor;
+import gutenberg.server.CConfig;
 import gutenberg.server.CItemRegister;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -34,7 +36,7 @@ import org.xml.sax.SAXException;
 public class CServer extends CActor
 {
 	private CConfig config;
-	private static final String SERVER_CONFIG_FILENAME="rc/server.xml";
+	private static final String SERVER_CONFIG_FILENAME="server.xml";
 	private static final String GUT_CACHE_FILE_TAG_OPEN="cache/epub/";
 	private static final String GUT_CACHE_FILE_TAG_CLOSE="\">";
 	public CServer()
@@ -51,8 +53,21 @@ public class CServer extends CActor
 	 */
 	public void init() throws Exception
 	{
-		config=CConfig.build(configFilename);
-		super.init();
+
+		InputStream configStream = getClass().getResourceAsStream(configFilename); 
+		if(configStream==null)
+		{
+			throw new Exception("CServer::init> invalid configuration, unable to find config filename {"+configFilename+"}");
+		}
+		try
+		{
+			config=CConfig.build(configStream);
+			super.init();	
+		}
+		finally
+		{
+			configStream.close();
+		}
 	}
 	
 
