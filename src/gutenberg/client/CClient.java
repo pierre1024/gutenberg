@@ -9,12 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.sql.Array;
-import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Types;
 import java.text.Normalizer;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -37,7 +34,6 @@ public class CClient extends CActor
 {
 	private CConfig config;
 	private static final String CLIENT_CONFIG_FILENAME="client.xml";
-	private static String SQL_FETCH_TOKEN=",";
 	protected enum EWPCol
 	{
 		ID,
