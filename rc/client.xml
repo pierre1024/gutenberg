@@ -19,7 +19,7 @@
 	
 	<!-- log configuration-->
 	<log>
-		<name>gutemberg</name>
+		<name>gutenberg</name>
 		<filename>gutemberg.log</filename>
 		<maxFileNumber>1</maxFileNumber>
 		<maxFileSize>1000000</maxFileSize>

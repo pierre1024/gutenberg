@@ -3,21 +3,24 @@ package gutenberg.client;
 import gutenberg.AConfig;
 import gutenberg.CActor;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.Normalizer;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.lang.String;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -46,9 +49,10 @@ public class CClient extends CActor
 	protected void publishWP(JSONObject request) throws Exception
 	{
 		getLogger().log(Level.INFO,"running publish request "+request.toString(3)+" ...");
-		
+
+		/*
 		//Build process
-		ProcessBuilder pb = new ProcessBuilder("curl","http://localhost:5279/lbryapi", "--data",request.toString());
+		ProcessBuilder pb = new ProcessBuilder("cursl","http://localhost:5279/lbryapi", "--data",request.toString());
 		Process process;
 		
 		//Run process with timeout
@@ -59,29 +63,30 @@ public class CClient extends CActor
 			String msg="process timeout";
 			getLogger().log(Level.SEVERE,msg);
 			throw new Exception(msg);
-		}
-		//Get error if any
-		BufferedReader err = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+		}*/
+		HttpClient httpClient = HttpClientBuilder.create().build();
 
-		String line;
-		String sErr="";
-		while ((line = err.readLine()) != null)
+	    HttpPost httpRequest = new HttpPost("http://localhost:5279/lbryapi");
+	    String sAnswer="";
+	    try
 		{
-			sErr+=line+"\n";
-		}
-	
-		BufferedReader answer = new BufferedReader(new InputStreamReader(process.getInputStream()));
-		
-		//Get answer if any
-		String sAnswer="";
-		while ((line = answer.readLine()) != null)
+		    httpRequest.setEntity(new StringEntity(request.toString()));
+		    httpRequest.setHeader("Accept", "application/json");
+		    httpRequest.setHeader("Content-type", "application/json");
+		    HttpResponse response = httpClient.execute(httpRequest);
+		    sAnswer=EntityUtils.toString(response.getEntity());
+		    System.out.print(sAnswer);
+		} catch (IOException e)
 		{
-			sAnswer+=line+"\n";
-		}
+			String msg="publish request failed";
+			getLogger().log(Level.SEVERE,msg);
+			throw new Exception(msg);
+		} 
+
 		//we have an error abort
 		if(sAnswer.isEmpty())
 		{
-			String msg="publish answer is empty error {"+sErr+"}";
+			String msg="publish answer is empty, abort publishing...";
 			getLogger().log(Level.SEVERE,msg);
 			throw new Exception(msg);
 		}
@@ -154,13 +159,17 @@ public class CClient extends CActor
 		/************************************************
 		 * 		Process all work packages from database
 		 ************************************************/
-		getLogger().log(Level.INFO,"processing all work packages {"+sqlResult.getFetchSize()+"}!");
+		int nbItem=100;
+		getLogger().log(Level.INFO,"processing all work packages {"+nbItem+"}!");
 		
 		
-		
+		int idItem=1;
 		while (sqlResult.next())
 		{
 			int wpId=sqlResult.getInt("ID");
+			String msg="\n####### PACKAGE {"+idPackage+"} ITEM {"+idItem+"/"+nbItem+"} ... #######\n";
+			++idItem;
+			getLogger().log(Level.INFO,msg);
 			try
 			{
 				processWP(new JSONObject(sqlResult.getString("METADATA")),wpId);
@@ -168,9 +177,13 @@ public class CClient extends CActor
 			catch(Exception exception)
 			{
 				commitWPStatus(wpId,false);
+				msg="\n####### PACKAGE {"+idPackage+"} ITEM {"+idItem+"/"+nbItem+"} ABORT! #######\n";
+				getLogger().log(Level.INFO,msg);
 				continue;
 			}
 			commitWPStatus(wpId,true);
+			msg="\n####### PACKAGE {"+idPackage+"} ITEM {"+idItem+"/"+nbItem+"} DONE! #######\n";
+			getLogger().log(Level.INFO,msg);
 		}
 		getLogger().log(Level.INFO,"processing all work packages done!");
 	}
