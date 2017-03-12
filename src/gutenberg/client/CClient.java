@@ -9,9 +9,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.sql.Array;
+import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.text.Normalizer;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -34,40 +37,17 @@ public class CClient extends CActor
 {
 	private CConfig config;
 	private static final String CLIENT_CONFIG_FILENAME="client.xml";
-	public CClient()
+	private static String SQL_FETCH_TOKEN=",";
+	protected enum EWPCol
 	{
-		this(CLIENT_CONFIG_FILENAME);
+		ID,
+		STATUS,
+		METADATA
 	}
-	public CClient(String configFilename)
-	{
-		super(configFilename);
-	}
-	
-	/**
-	 * Initialize DB and log systems
-	 */
-	public void init() throws Exception
-	{
-		InputStream configStream = getClass().getClassLoader().getResourceAsStream(configFilename); 
-		if(configStream==null)
-		{
-			throw new Exception("CClient::init> invalid configuration, unable to find config filename {"+configFilename+"}");
-		}
-		try
-		{
-			config=CConfig.build(configStream);
-			super.init();	
-		}
-		finally
-		{
-			configStream.close();
-		}
-	}
-
 	/**
 	 * publish work package
 	 */
-	void publishWP(JSONObject request) throws Exception
+	protected void publishWP(JSONObject request) throws Exception
 	{
 		getLogger().log(Level.INFO,"running publish request "+request.toString(3)+" ...");
 		
@@ -138,7 +118,7 @@ public class CClient extends CActor
 	/**
 	 * commit work package status
 	 */
-	void commitWPStatus(int id,boolean succeed) throws Exception
+	protected void commitWPStatus(int id,boolean succeed) throws Exception
 	{
 		String sId=Integer.toString(id);
 		String sStatus=succeed?"DONE_2":"ABORT";
@@ -146,20 +126,65 @@ public class CClient extends CActor
 		getLogger().log(Level.INFO,"commit work package {"+sId+"} status {"+sStatus+"} ...");
 		
 		
-		Statement statementUpdate = connection.createStatement();
-		String sql = "UPDATE WORK_PACKAGE set STATUS = '"+sStatus+"' where ID="+sId+";";
-		statementUpdate.executeUpdate(sql);
+		//Statement statementUpdate = connection.createStatement();
+		//String sql = "UPDATE WORK_PACKAGE set STATUS = '"+sStatus+"' where ID="+sId+";";
+		//statementUpdate.executeUpdate(sql);
 		
 		getLogger().log(Level.INFO,"commit done!");
 	}
+
 	
+	protected void makePackage(int idPackage) throws Exception
+	{
+		getLogger().log(Level.INFO,"extracting work package {"+Integer.toString(idPackage)+"} from database {WORK_PACKAGE} ...");
+		ResultSet sqlResult=null;
+		try
+		{
+
+			Statement statement = connection.createStatement();
+			String sql = "SELECT * FROM public.fetch_backup();";
+			sqlResult = statement.executeQuery(sql);
+			
+		}
+		catch(SQLException exception)
+		{
+			String msg="extracting work package {"+Integer.toString(idPackage)+"} failed : "+exception.getMessage();
+			getLogger().log(Level.SEVERE,msg);
+			throw new Exception(msg);
+		}
+		
+		getLogger().log(Level.INFO,"extract done, fetch all work packages {"+sqlResult.getFetchSize()+"}!");
+
+		/************************************************
+		 * 		Process all work packages from database
+		 ************************************************/
+		getLogger().log(Level.INFO,"processing all work packages {"+sqlResult.getFetchSize()+"}!");
+		
+		
+		
+		while (sqlResult.next())
+		{
+			int wpId=sqlResult.getInt("ID");
+			try
+			{
+				processWP(new JSONObject(sqlResult.getString("METADATA")),wpId);
+			}
+			catch(Exception exception)
+			{
+				commitWPStatus(wpId,false);
+				continue;
+			}
+			commitWPStatus(wpId,true);
+		}
+		getLogger().log(Level.INFO,"processing all work packages done!");
+	}
 	/**
 	 * 
 	 * @param jsonParam contains all data about book
 	 * @param id book id
 	 * @throws Exception 
 	 */
-	void processWP(JSONObject jsonParam,int id) throws Exception
+	protected void processWP(JSONObject jsonParam,int id) throws Exception
 	{
 
 		getLogger().log(Level.INFO,"processing working package {"+Integer.toString(id)+"} ...");
@@ -238,10 +263,43 @@ public class CClient extends CActor
 		publishWP(jsonRequest);
 	}
 	
+	public CClient()
+	{
+		this(CLIENT_CONFIG_FILENAME);
+	}
+	public CClient(String configFilename)
+	{
+		super(configFilename);
+	}
+	
+	/**
+	 * Initialize DB and log systems
+	 */
+	public void init() throws Exception
+	{
+		InputStream configStream = getClass().getClassLoader().getResourceAsStream(configFilename); 
+		if(configStream==null)
+		{
+			throw new Exception("CClient::init> invalid configuration, unable to find config filename {"+configFilename+"}");
+		}
+		try
+		{
+			config=CConfig.build(configStream);
+			super.init();	
+		}
+		finally
+		{
+			configStream.close();
+		}
+	}
+
+	
+	
 	/**
 	 * Publish all work packages
+	 * @param nbPackage 
 	 * */
-	public void run() throws Exception
+	public void run(int nbPackage) throws Exception
 	{
 		
 
@@ -253,47 +311,12 @@ public class CClient extends CActor
 		/************************************************
 		 * 		Extract all work packages from database
 		 ************************************************/
-		getLogger().log(Level.INFO,"extracting all work packages from database {WORK_PACKAGE} ...");
+		getLogger().log(Level.INFO,"extracting all work packages {"+Integer.toString(nbPackage)+"} from database {WORK_PACKAGE} ...");
 		
-		ResultSet sqlResult;
-		try
+		for(int idPackage=0;idPackage<nbPackage;++idPackage)
 		{
-
-			Statement statement = connection.createStatement();
-			String sql = "SELECT ID, METADATA FROM WORK_PACKAGE WHERE STATUS = 'AVAILABLE' LIMIT 10000;";
-			sqlResult = statement.executeQuery(sql);
+			makePackage(idPackage);
 		}
-		catch(SQLException exception)
-		{
-			String msg="extracting all work packages failed : "+exception.getMessage();
-			getLogger().log(Level.SEVERE,msg);
-			throw new Exception(msg);
-		}
-		
-		getLogger().log(Level.INFO,"extract done, fetch all work packages {"+sqlResult.getFetchSize()+"}!");
-
-		/************************************************
-		 * 		Process all work packages from database
-		 ************************************************/
-		getLogger().log(Level.INFO,"processing all work packages {"+sqlResult.getFetchSize()+"}!");
-		
-		
-	
-		while (sqlResult.next())
-		{
-			int wpId=sqlResult.getInt("ID");
-			try
-			{
-				processWP(new JSONObject(sqlResult.getString("METADATA")),wpId);
-			}
-			catch(Exception exception)
-			{
-				commitWPStatus(wpId,false);
-				continue;
-			}
-			commitWPStatus(wpId,true);
-		}
-		getLogger().log(Level.INFO,"processing all work packages done!");
 	}
 
 	@Override

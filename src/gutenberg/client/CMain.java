@@ -19,7 +19,12 @@ public class CMain
 		try
 		{
 			CClient client=new CClient();
-			client.run();
+			int nbPackage=1;
+			if(args.length>0)
+			{
+				nbPackage=Integer.parseInt(args[0]);
+			}
+			client.run(nbPackage);
 			System.exit(0);
 		}
 		//something goes wrong we abort program
