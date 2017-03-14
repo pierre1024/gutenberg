@@ -223,8 +223,8 @@ public class CClient extends CActor
 		//now we replace all other characters by '-'
 		name=name.replaceAll("[^0-9a-zA-Z]+","-");
 
-		//name can't start or end with '-'
-		name=name.replaceAll("^[-]+","").replaceAll("[-]+$","");
+		//name can't start or end with '-' and all lower case
+		name=name.replaceAll("^[-]+","").replaceAll("[-]+$","").toLowerCase();
 
 		jsonParam.put("name",name);
 
